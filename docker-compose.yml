@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - evenements_net
+
+  api:
+    build: ./api
+    container_name: nest_api
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./api/.env
+    depends_on:
+      - mongodb
+    networks:
+      - evenements_net
+
+  web:
+    build: ./web
+    container_name: next_web
+    restart: always
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./web/.env
+    depends_on:
+      - api
+    networks:
+      - evenements_net
+
+volumes:
+  mongo_data:
+
+networks:
+  evenements_net:
+    driver: bridge
