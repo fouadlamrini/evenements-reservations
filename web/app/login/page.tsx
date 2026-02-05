@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import FormInput from "@/components/FormInput";
 import Link from "next/link";
+import Header from "@/components/Header";
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -32,54 +33,54 @@ export default function LoginPage() {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center bg-cover bg-center"
-      style={{ backgroundImage: "url('/assets/background.jpg')" }}
-    >
-      <div className="bg-black/50 p-8 rounded-xl shadow-lg w-full max-w-md backdrop-blur-md">
-        <div className="flex justify-center mb-6">
-          <Image
-            src="/assets/logo.jpg"
-            alt="Logo"
-            width={100}
-            height={100}
-            className="rounded-full"
-          />
+    <div className="min-h-screen bg-cover bg-center">
+      <Header />
+      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]" style={{ backgroundImage: "url('/assets/background.jpg')" }}>
+        <div className="bg-black/50 p-8 rounded-xl shadow-lg w-full max-w-md backdrop-blur-md">
+          <div className="flex justify-center mb-6">
+            <Image
+              src="/assets/logo.jpg"
+              alt="Logo"
+              width={100}
+              height={100}
+              className="rounded-full"
+            />
+          </div>
+          <h2 className="text-2xl font-bold text-center text-white mb-6">
+            Welcome
+          </h2>
+          <form onSubmit={handleSubmit}>
+            <FormInput
+              name="email"
+              type="text"
+              placeholder="Username"
+              value={form.email}
+              onChange={handleChange}
+              required
+            />
+            <FormInput
+              name="password"
+              type="password"
+              placeholder="Password"
+              value={form.password}
+              onChange={handleChange}
+              required
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded-lg transition-colors"
+            >
+              {loading ? "Loading..." : "Login"}
+            </button>
+          </form>
+          <p className="text-sm text-white text-center mt-4">
+            Don't have an account?{" "}
+            <Link href="/register" className="text-yellow-400 hover:underline">
+              Register
+            </Link>
+          </p>
         </div>
-        <h2 className="text-2xl font-bold text-center text-white mb-6">
-          Welcome
-        </h2>
-        <form onSubmit={handleSubmit}>
-          <FormInput
-            name="email"
-            type="text"
-            placeholder="Username"
-            value={form.email}
-            onChange={handleChange}
-            required
-          />
-          <FormInput
-            name="password"
-            type="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={handleChange}
-            required
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded-lg transition-colors"
-          >
-            {loading ? "Loading..." : "Login"}
-          </button>
-        </form>
-        <p className="text-sm text-white text-center mt-4">
-          Don't have an account?{" "}
-          <Link href="/register" className="text-yellow-400 hover:underline">
-            Register
-          </Link>
-        </p>
       </div>
     </div>
   );
