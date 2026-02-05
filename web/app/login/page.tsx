@@ -1,16 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { AuthService } from "@/services/auth.service";
+import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import FormInput from "@/components/FormInput";
 import Link from "next/link";
-import Header from "@/components/Header";
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const { login } = useAuth();
   const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -20,13 +20,12 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
+
     try {
-      const response = await AuthService.login(form);
-      localStorage.setItem("token", response.data.token);
-      alert("Login successful!");
-      router.push("/");
-    } catch (error: any) {
-      alert(error?.response?.data?.message || "Login failed");
+      await login(form.email, form.password);
+    } catch (err: any) {
+      setError(err.message || "Login failed");
     } finally {
       setLoading(false);
     }
@@ -34,8 +33,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-cover bg-center">
-      <Header />
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]" style={{ backgroundImage: "url('/assets/background.jpg')" }}>
+      <div className="flex items-center justify-center min-h-screen" style={{ backgroundImage: "url('/assets/background.jpg')" }}>
         <div className="bg-black/50 p-8 rounded-xl shadow-lg w-full max-w-md backdrop-blur-md">
           <div className="flex justify-center mb-6">
             <Image
@@ -47,33 +45,49 @@ export default function LoginPage() {
             />
           </div>
           <h2 className="text-2xl font-bold text-center text-white mb-6">
-            Welcome
+            Welcome Back
           </h2>
+          
+          {error && (
+            <div className="bg-red-500 text-white p-3 rounded-lg mb-4 text-center">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit}>
-            <FormInput
-              name="email"
-              type="text"
-              placeholder="Username"
-              value={form.email}
-              onChange={handleChange}
-              required
-            />
-            <FormInput
-              name="password"
-              type="password"
-              placeholder="Password"
-              value={form.password}
-              onChange={handleChange}
-              required
-            />
+            <div className="mb-4">
+              <input
+                name="email"
+                type="email"
+                placeholder="Email"
+                value={form.email}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-500"
+              />
+            </div>
+            
+            <div className="mb-6">
+              <input
+                name="password"
+                type="password"
+                placeholder="Password"
+                value={form.password}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-500"
+              />
+            </div>
+            
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded-lg transition-colors"
+              className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Loading..." : "Login"}
+              {loading ? "Logging in..." : "Login"}
             </button>
           </form>
+          
           <p className="text-sm text-white text-center mt-4">
             Don't have an account?{" "}
             <Link href="/register" className="text-yellow-400 hover:underline">
