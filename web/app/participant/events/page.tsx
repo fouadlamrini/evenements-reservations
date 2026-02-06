@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import api from "../../services/api";
+import api from "../../../services/api";
 
 interface Event {
   _id: string;
