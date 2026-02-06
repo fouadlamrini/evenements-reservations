@@ -19,6 +19,7 @@ export class UsersSeeder implements OnApplicationBootstrap {
         name: 'Admin',
         email: adminEmail,
         password: 'Admin123!',
+        role: Role.Admin,
       },
       Role.Admin,
     );

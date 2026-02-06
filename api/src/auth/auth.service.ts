@@ -22,11 +22,26 @@ export class AuthService {
 
     const user = await this.usersService.create(
       createUserDto,
-      Role.Participant,
+      createUserDto.role || Role.Participant,
     );
 
     const { password, ...result } = user.toObject(); // remove password
-    return result;
+    
+    // Generate token for newly registered user
+    const payload = {
+      sub: user._id.toString(),
+      email: user.email,
+      role: user.role,
+    };
+    
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: {
+        userId: user._id.toString(),
+        email: user.email,
+        role: user.role,
+      },
+    };
   }
 
   // LOGIN → validate user & return JWT
@@ -42,8 +57,14 @@ export class AuthService {
       email: user.email,
       role: user.role,
     };
+    const { password: _, ...userWithoutPassword } = user.toObject();
     return {
       access_token: this.jwtService.sign(payload),
+      user: {
+        userId: user._id.toString(),
+        email: user.email,
+        role: user.role,
+      },
     };
   }
 }
