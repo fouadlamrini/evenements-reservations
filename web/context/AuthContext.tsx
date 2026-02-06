@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import api from "../services/api";
 
 interface User {
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -50,7 +52,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(response.data.user);
 
       if (response.data.user.role === "Admin") {
-        window.location.href = "/admin/events";
+        router.replace("/admin/events");
+      } else {
+        router.replace("/events");
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -67,7 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(response.data.user);
 
       if (response.data.user.role === "Admin") {
-        window.location.href = "/admin/events";
+        router.replace("/admin/events");
+      } else {
+        router.replace("/events");
       }
     } catch (error) {
       console.error("Registration error:", error);
@@ -79,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setUser(null);
-    window.location.href = "/";
+    router.replace("/");
   };
 
   return (
