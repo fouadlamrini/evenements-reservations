@@ -4,8 +4,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { EventsModule } from './events/events.module';
-import { ReservationController } from './reservation/reservation.controller';
-import { SModule } from './reservation/s/s.module';
 import { ReservationModule } from './reservation/reservation.module';
 
 @Module({
@@ -24,10 +22,9 @@ import { ReservationModule } from './reservation/reservation.module';
     UsersModule,
     AuthModule,
     EventsModule,
-    SModule,
     ReservationModule,
   ],
-  controllers: [ReservationController],
+  controllers: [],
   providers: [],
 })
 export class AppModule {}

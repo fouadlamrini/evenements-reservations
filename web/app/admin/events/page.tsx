@@ -25,11 +25,7 @@ export default function AdminEventsPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!user || user.role !== "Admin") {
-      window.location.href = "/";
-      return;
-    }
-
+    // No need to check user role here - layout handles it
     fetchEvents();
   }, [user]);
 
