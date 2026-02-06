@@ -5,6 +5,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { EventsModule } from './events/events.module';
 import { ReservationModule } from './reservation/reservation.module';
+import { TicketsModule } from './tickets/tickets.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ReservationModule } from './reservation/reservation.module';
     AuthModule,
     EventsModule,
     ReservationModule,
+    TicketsModule,
   ],
   controllers: [],
   providers: [],

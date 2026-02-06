@@ -44,6 +44,14 @@ export default function Header() {
               >
                 About
               </Link>
+              {user?.role === "Participant" && (
+                <Link
+                  href="/participant/reservations"
+                  className="text-green-400 hover:text-green-300 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                >
+                  My Reservations
+                </Link>
+              )}
               {user?.role === "Admin" && (
                 <Link
                   href="/admin/events"

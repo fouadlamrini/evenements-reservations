@@ -57,6 +57,24 @@ export default function ParticipantReservationsPage() {
     }
   };
 
+  const handleDownloadTicket = async (reservationId: string) => {
+    try {
+      const response = await api.post(`/tickets/generate/${reservationId}`);
+      const { fileName } = response.data.data;
+      
+      // Create download link with proper uploads prefix using API base URL
+      const downloadUrl = `http://localhost:3001/uploads/tickets/${fileName}`;
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to generate ticket");
+    }
+  };
+
   const getStatusBadge = (status: string, canceledBy?: string) => {
     const baseClasses = "px-3 py-1 rounded-full text-xs font-bold";
     
@@ -83,6 +101,10 @@ export default function ParticipantReservationsPage() {
 
   const canCancel = (status: string) => {
     return status === "PENDING" || status === "CONFIRMED";
+  };
+
+  const canDownloadTicket = (status: string) => {
+    return status === "CONFIRMED";
   };
 
   if (loading) {
@@ -159,6 +181,15 @@ export default function ParticipantReservationsPage() {
                     >
                       View Event
                     </Link>
+                    
+                    {canDownloadTicket(reservation.status) && (
+                      <button
+                        onClick={() => handleDownloadTicket(reservation._id)}
+                        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded text-sm font-medium transition-colors flex items-center gap-2"
+                      >
+                        📄 Download Ticket
+                      </button>
+                    )}
                     
                     {canCancel(reservation.status) && (
                       <button
