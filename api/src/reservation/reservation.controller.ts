@@ -47,6 +47,13 @@ export class ReservationController {
     return this.reservationService.findOne(id);
   }
 
+  @Patch(':id')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Admin)
+  updateStatus(@Param('id') id: string, @Body() updateStatusDto: UpdateReservationStatusDto) {
+    return this.reservationService.updateStatus(id, updateStatusDto);
+  }
+
   @Patch(':id/confirm')
   @UseGuards(RolesGuard)
   @Roles(Role.Admin)

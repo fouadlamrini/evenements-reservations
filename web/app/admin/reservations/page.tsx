@@ -50,7 +50,7 @@ export default function AdminReservationsPage() {
 
   const handleConfirm = async (reservationId: string) => {
     try {
-      await api.patch(`/reservations/${reservationId}/confirm`);
+      await api.patch(`/reservations/${reservationId}`, { status: "CONFIRMED" });
       fetchReservations();
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to confirm reservation");
@@ -63,7 +63,7 @@ export default function AdminReservationsPage() {
     }
 
     try {
-      await api.patch(`/reservations/${reservationId}/refuse`);
+      await api.patch(`/reservations/${reservationId}`, { status: "REFUSED" });
       fetchReservations();
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to refuse reservation");
@@ -174,26 +174,26 @@ export default function AdminReservationsPage() {
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
                     <h3 className="text-xl font-bold text-white mb-2">
-                      {reservation.eventId.title}
+                      {reservation.eventId?.title || 'Event not found'}
                     </h3>
                     <div className="grid md:grid-cols-2 gap-4 mb-3">
                       <div className="space-y-1 text-sm">
                         <p className="text-gray-400">
-                          <span className="font-medium">Participant:</span> {reservation.participantId.name}
+                          <span className="font-medium">Participant:</span> {reservation.participantId?.name || 'Unknown'}
                         </p>
                         <p className="text-gray-400">
-                          <span className="font-medium">Email:</span> {reservation.participantId.email}
+                          <span className="font-medium">Email:</span> {reservation.participantId?.email || 'Unknown'}
                         </p>
                       </div>
                       <div className="space-y-1 text-sm">
                         <p className="text-gray-400">
-                          <span className="font-medium">Date:</span> {new Date(reservation.eventId.date).toLocaleDateString()}
+                          <span className="font-medium">Date:</span> {reservation.eventId?.date ? new Date(reservation.eventId.date).toLocaleDateString() : 'Unknown'}
                         </p>
                         <p className="text-gray-400">
-                          <span className="font-medium">Time:</span> {reservation.eventId.time}
+                          <span className="font-medium">Time:</span> {reservation.eventId?.time || 'Unknown'}
                         </p>
                         <p className="text-gray-400">
-                          <span className="font-medium">Location:</span> {reservation.eventId.location}
+                          <span className="font-medium">Location:</span> {reservation.eventId?.location || 'Unknown'}
                         </p>
                       </div>
                     </div>
@@ -209,12 +209,18 @@ export default function AdminReservationsPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <Link
-                    href={`/events/${reservation.eventId._id}`}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
-                  >
-                    View Event
-                  </Link>
+                  {reservation.eventId?._id ? (
+                    <Link
+                      href={`/events/${reservation.eventId._id}`}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+                    >
+                      View Event
+                    </Link>
+                  ) : (
+                    <span className="bg-gray-600 text-gray-400 px-4 py-2 rounded text-sm font-medium">
+                      Event Unavailable
+                    </span>
+                  )}
                   
                   {canConfirm(reservation.status) && (
                     <button

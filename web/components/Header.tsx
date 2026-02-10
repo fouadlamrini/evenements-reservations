@@ -67,7 +67,7 @@ export default function Header() {
             {user ? (
               <>
                 <span className="text-gray-300 text-sm">
-                  Welcome, {user.email}
+                  Welcome, {user.name}
                 </span>
                 <button
                   onClick={logout}
