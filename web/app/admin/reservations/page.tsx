@@ -38,7 +38,7 @@ export default function AdminReservationsPage() {
     // No need to check user role here - layout handles it
     fetchReservations();
   }, [user]);
-
+ 
   const fetchReservations = async () => {
     try {
       const response = await api.get("/reservations");

@@ -29,11 +29,7 @@ export default function AdminSidebar() {
       label: "Reservations",
       icon: "🎫",
     },
-    {
-      href: "/admin/users",
-      label: "Users",
-      icon: "👥",
-    },
+  
   ];
 
   return (

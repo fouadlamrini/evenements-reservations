@@ -150,6 +150,7 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
   }
 
   return (
+    
     <div className="flex">
       <AdminSidebar />
       <div className="flex-1 p-8">
