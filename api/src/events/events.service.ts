@@ -43,6 +43,32 @@ export class EventsService {
     return event;
   }
 
+  async findOneWithReservationStats(id: string): Promise<Event & { confirmedReservations: number; totalReservations: number; fillRate: number }> {
+    const event = await this.findOne(id);
+    
+    // Get reservation statistics for this event
+    const confirmedReservations = await this.reservationModel.countDocuments({
+      eventId: event._id,
+      status: ReservationStatus.CONFIRMED
+    }).exec();
+    
+    const totalReservations = await this.reservationModel.countDocuments({
+      eventId: event._id,
+      status: { $in: [ReservationStatus.PENDING, ReservationStatus.CONFIRMED] }
+    }).exec();
+    
+    const fillRate = event.maxCapacity > 0 
+      ? Math.round((confirmedReservations / event.maxCapacity) * 100)
+      : 0;
+    
+    return {
+      ...event.toObject(),
+      confirmedReservations,
+      totalReservations,
+      fillRate
+    };
+  }
+
   async findAdminOne(id: string, creatorId: string): Promise<Event> {
     const event = await this.eventModel.findById(id).exec();
     if (!event) {
@@ -65,6 +91,10 @@ export class EventsService {
 
   async remove(id: string, creatorId: string): Promise<Event> {
     const event = await this.findAdminOne(id, creatorId);
+    
+    // Delete all reservations associated with this event
+    await this.reservationModel.deleteMany({ eventId: id }).exec();
+    
     await this.eventModel.findByIdAndDelete(id).exec();
     return event;
   }

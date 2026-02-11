@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import AdminSidebar from "../../../components/AdminSidebar";
 import Link from "next/link";
@@ -30,6 +30,8 @@ export default function AdminReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [actionToConfirm, setActionToConfirm] = useState<{type: string, id: string} | null>(null);
   const [filter, setFilter] = useState<string>("all");
 
   useEffect(() => {
@@ -49,37 +51,41 @@ export default function AdminReservationsPage() {
   };
 
   const handleConfirm = async (reservationId: string) => {
-    try {
-      await api.patch(`/reservations/${reservationId}`, { status: "CONFIRMED" });
-      fetchReservations();
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to confirm reservation");
-    }
+    setConfirmMessage("Êtes-vous sûr de vouloir confirmer cette réservation ?");
+    setActionToConfirm({ type: 'confirm', id: reservationId });
   };
 
   const handleRefuse = async (reservationId: string) => {
-    if (!confirm("Are you sure you want to refuse this reservation?")) {
-      return;
-    }
-
-    try {
-      await api.patch(`/reservations/${reservationId}`, { status: "REFUSED" });
-      fetchReservations();
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to refuse reservation");
-    }
+    setConfirmMessage("Êtes-vous sûr de vouloir refuser cette réservation ?");
+    setActionToConfirm({ type: 'refuse', id: reservationId });
   };
 
   const handleCancel = async (reservationId: string) => {
-    if (!confirm("Are you sure you want to cancel this reservation?")) {
-      return;
-    }
+    setConfirmMessage("Êtes-vous sûr de vouloir annuler cette réservation ?");
+    setActionToConfirm({ type: 'cancel', id: reservationId });
+  };
 
+  const executeAction = async () => {
+    if (!actionToConfirm) return;
+    
     try {
-      await api.patch(`/reservations/${reservationId}/cancel-admin`);
+      switch (actionToConfirm.type) {
+        case 'confirm':
+          await api.patch(`/reservations/${actionToConfirm.id}`, { status: "CONFIRMED" });
+          break;
+        case 'refuse':
+          await api.patch(`/reservations/${actionToConfirm.id}`, { status: "REFUSED" });
+          break;
+        case 'cancel':
+          await api.patch(`/reservations/${actionToConfirm.id}/cancel-admin`);
+          break;
+      }
       fetchReservations();
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to cancel reservation");
+      setError(err.response?.data?.message || "Failed to perform action");
+    } finally {
+      setConfirmMessage("");
+      setActionToConfirm(null);
     }
   };
 
@@ -142,6 +148,32 @@ export default function AdminReservationsPage() {
     <div className="flex">
       <AdminSidebar />
       <div className="flex-1 p-8">
+        {/* Confirmation Modal */}
+        {confirmMessage && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-800 rounded-lg p-6 max-w-md mx-4">
+              <h3 className="text-lg font-bold text-white mb-4">Confirmation</h3>
+              <p className="text-gray-300 mb-6">{confirmMessage}</p>
+              <div className="flex gap-4">
+                <button
+                  onClick={executeAction}
+                  className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition-colors"
+                >
+                  Oui
+                </button>
+                <button
+                  onClick={() => {
+                    setConfirmMessage("");
+                    setActionToConfirm(null);
+                  }}
+                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-4">Reservations Management</h1>
           <div className="flex gap-4 items-center">

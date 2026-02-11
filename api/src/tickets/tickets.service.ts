@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Reservation } from '../reservation/schemas/reservation.schema';
@@ -16,7 +20,9 @@ export class TicketsService {
     @InjectModel(User.name) private userModel: Model<User>,
   ) {}
 
-  async generateTicket(reservationId: string): Promise<{ filePath: string; fileName: string }> {
+  async generateTicket(
+    reservationId: string,
+  ): Promise<{ filePath: string; fileName: string }> {
     const reservation = await this.reservationModel
       .findById(reservationId)
       .populate('eventId')
@@ -28,7 +34,9 @@ export class TicketsService {
     }
 
     if (reservation.status !== 'CONFIRMED') {
-      throw new BadRequestException('Reservation must be confirmed to generate ticket');
+      throw new BadRequestException(
+        'Reservation must be confirmed to generate ticket',
+      );
     }
 
     const event = reservation.eventId as any;
@@ -50,15 +58,18 @@ export class TicketsService {
     return { filePath, fileName };
   }
 
-  private async createPDF(filePath: string, data: {
-    participantName: string;
-    eventTitle: string;
-    eventDescription: string;
-    eventLocation: string;
-    eventDate: string;
-    eventTime: string;
-    reservationId: string;
-  }): Promise<void> {
+  private async createPDF(
+    filePath: string,
+    data: {
+      participantName: string;
+      eventTitle: string;
+      eventDescription: string;
+      eventLocation: string;
+      eventDate: string;
+      eventTime: string;
+      reservationId: string;
+    },
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       const doc = new PDFDocument({ size: 'A4' });
       const stream = fs.createWriteStream(filePath);
@@ -66,12 +77,19 @@ export class TicketsService {
       doc.pipe(stream);
 
       // Add background image
-      const imagePath = path.join(process.cwd(), '..', 'web', 'public', 'assets', 'ticket.jpeg');
+      const imagePath = path.join(
+        process.cwd(),
+        '..',
+        'web',
+        'public',
+        'assets',
+        'ticket.jpeg',
+      );
       if (fs.existsSync(imagePath)) {
         doc.image(imagePath, 0, 0, {
           fit: [595.28, 841.89], // A4 size in points
           align: 'center',
-          valign: 'center'
+          valign: 'center',
         });
       }
 
@@ -82,16 +100,16 @@ export class TicketsService {
 
       // Title at the top
       doc.fontSize(32).font('Helvetica-Bold').fillColor('white');
-      doc.text('EVENT TICKET', margin, 80, { 
-        width: pageWidth - 2 * margin, 
-        align: 'center' 
+      doc.text('EVENT TICKET', margin, 80, {
+        width: pageWidth - 2 * margin,
+        align: 'center',
       });
 
       // Reservation ID
       doc.fontSize(12).font('Helvetica').fillColor('white');
-      doc.text(`Reservation ID: ${data.reservationId}`, margin, 130, { 
-        width: pageWidth - 2 * margin, 
-        align: 'center' 
+      doc.text(`Reservation ID: ${data.reservationId}`, margin, 130, {
+        width: pageWidth - 2 * margin,
+        align: 'center',
       });
 
       // Participant Information Section
@@ -103,15 +121,15 @@ export class TicketsService {
       // Event Information Section
       doc.fontSize(18).font('Helvetica-Bold').fillColor('white');
       doc.text('EVENT DETAILS', margin, 300);
-      
+
       doc.fontSize(14).font('Helvetica').fillColor('white');
       doc.text(`Title: ${data.eventTitle}`, margin, 330);
-      
+
       // Description with word wrap
       doc.fontSize(12).font('Helvetica').fillColor('white');
       doc.text(`Description: ${data.eventDescription}`, margin, 360, {
         width: pageWidth - 2 * margin,
-        align: 'left'
+        align: 'left',
       });
 
       // Location, Date, Time
@@ -122,15 +140,26 @@ export class TicketsService {
 
       // Confirmation message at bottom
       doc.fontSize(10).font('Helvetica-Oblique').fillColor('white');
-      doc.text('This ticket confirms your reservation for the event.', margin, pageHeight - 100, {
-        width: pageWidth - 2 * margin,
-        align: 'center'
-      });
+      doc.text(
+        'This ticket confirms your reservation for the event.',
+        margin,
+        pageHeight - 100,
+        {
+          width: pageWidth - 2 * margin,
+          align: 'center',
+        },
+      );
 
       // Add a decorative line
       doc.strokeColor('white').lineWidth(1);
-      doc.moveTo(margin, 250).lineTo(pageWidth - margin, 250).stroke();
-      doc.moveTo(margin, 280).lineTo(pageWidth - margin, 280).stroke();
+      doc
+        .moveTo(margin, 250)
+        .lineTo(pageWidth - margin, 250)
+        .stroke();
+      doc
+        .moveTo(margin, 280)
+        .lineTo(pageWidth - margin, 280)
+        .stroke();
 
       doc.end();
 
@@ -141,7 +170,7 @@ export class TicketsService {
 
   async getTicketFilePath(fileName: string): Promise<string> {
     const filePath = path.join(process.cwd(), 'uploads', 'tickets', fileName);
-    
+
     if (!fs.existsSync(filePath)) {
       throw new NotFoundException('Ticket file not found');
     }

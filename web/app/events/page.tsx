@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import Header from "../../components/Header";
 import Link from "next/link";
@@ -15,6 +15,9 @@ interface Event {
   location: string;
   maxCapacity: number;
   status: string;
+  confirmedReservations?: number;
+  totalReservations?: number;
+  fillRate?: number;
 }
 
 export default function EventsPage() {
@@ -30,7 +33,18 @@ export default function EventsPage() {
   const fetchEvents = async () => {
     try {
       const response = await api.get("/events");
-      setEvents(response.data);
+      // Fetch stats for each event
+      const eventsWithStats = await Promise.all(
+        response.data.map(async (event: Event) => {
+          try {
+            const statsResponse = await api.get(`/events/${event._id}/stats`);
+            return { ...event, ...statsResponse.data };
+          } catch {
+            return event; // Fallback to basic event data
+          }
+        })
+      );
+      setEvents(eventsWithStats);
     } catch (err: any) {
       setError(err.response?.data?.message || "An error occurred");
     } finally {
@@ -97,7 +111,7 @@ export default function EventsPage() {
                       {event.description}
                     </p>
 
-                    <div className="space-y-2 text-sm text-gray-300 mb-6">
+                    <div className="space-y-2 text-sm text-gray-300 mb-4">
                       <div className="flex items-center gap-2">
                         <span>📅</span>
                         <span>{new Date(event.date).toLocaleDateString()}</span>
@@ -114,6 +128,29 @@ export default function EventsPage() {
                         <span>👥</span>
                         <span>{event.maxCapacity} capacity</span>
                       </div>
+                      
+                      {/* Reservation Stats */}
+                      {event.confirmedReservations !== undefined && (
+                        <div className="mt-3 pt-3 border-t border-gray-700">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-green-400 font-bold">
+                              📊 {event.confirmedReservations}/{event.maxCapacity}
+                            </span>
+                            <span className="text-yellow-400 font-bold">
+                              {event.fillRate}% rempli
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-700 rounded-full h-2">
+                            <div 
+                              className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${Math.min(event.fillRate || 0, 100)}%` }}
+                            ></div>
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">
+                            {event.maxCapacity - (event.confirmedReservations || 0)} places disponibles
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <Link

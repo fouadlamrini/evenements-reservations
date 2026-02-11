@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../../context/AuthContext";
 import AdminSidebar from "../../../../components/AdminSidebar";
@@ -21,6 +21,7 @@ export default function CreateEventPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [dateError, setDateError] = useState("");
 
   useEffect(() => {
     if (!user || user.role !== "Admin") {
@@ -35,10 +36,35 @@ export default function CreateEventPage() {
       ...prev,
       [name]: value,
     }));
+    
+    // Clear date error when user changes the date
+    if (name === "date") {
+      setDateError("");
+    }
+  };
+
+  const validateDate = (dateString: string) => {
+    const selectedDate = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day for fair comparison
+    
+    if (selectedDate <= today) {
+      setDateError("La date de l'événement doit être dans le futur");
+      return false;
+    }
+    
+    setDateError("");
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate date before submitting
+    if (!validateDate(formData.date)) {
+      return;
+    }
+    
     setLoading(true);
     setError("");
 
@@ -114,19 +140,25 @@ export default function CreateEventPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="date" className="block text-white font-medium mb-2">
-                  Date *
-                </label>
-                <input
-                  type="date"
-                  id="date"
-                  name="date"
-                  value={formData.date}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-500"
-                />
-              </div>
+              <label htmlFor="date" className="block text-white font-medium mb-2">
+                Date *
+              </label>
+              <input
+                type="date"
+                id="date"
+                name="date"
+                value={formData.date}
+                onChange={handleChange}
+                required
+                min={new Date().toISOString().split('T')[0]} // Set min date to today
+                className={`w-full px-4 py-2 bg-gray-700 border rounded-lg text-white focus:outline-none focus:border-yellow-500 ${
+                  dateError ? 'border-red-500' : 'border-gray-600'
+                }`}
+              />
+              {dateError && (
+                <p className="text-red-400 text-sm mt-1">⚠️ {dateError}</p>
+              )}
+            </div>
 
               <div>
                 <label htmlFor="time" className="block text-white font-medium mb-2">

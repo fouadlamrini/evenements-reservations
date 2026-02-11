@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import React, { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../../../context/AuthContext";
 import AdminSidebar from "../../../../../components/AdminSidebar";
@@ -34,6 +34,7 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [dateError, setDateError] = useState("");
 
   const resolvedParams = use(params);
   const eventId = resolvedParams.id;
@@ -78,10 +79,35 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
       ...prev,
       [name]: value,
     }));
+    
+    // Clear date error when user changes the date
+    if (name === "date") {
+      setDateError("");
+    }
+  };
+
+  const validateDate = (dateString: string) => {
+    const selectedDate = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day for fair comparison
+    
+    if (selectedDate <= today) {
+      setDateError("La date de l'événement doit être dans le futur");
+      return false;
+    }
+    
+    setDateError("");
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate date before submitting
+    if (!validateDate(formData.date)) {
+      return;
+    }
+    
     setSubmitting(true);
     setError("");
 
@@ -189,8 +215,14 @@ export default function EditEventPage({ params }: { params: Promise<{ id: string
                   value={formData.date}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-500"
+                  min={new Date().toISOString().split('T')[0]} // Set min date to today
+                  className={`w-full px-4 py-2 bg-gray-700 border rounded-lg text-white focus:outline-none focus:border-yellow-500 ${
+                    dateError ? 'border-red-500' : 'border-gray-600'
+                  }`}
                 />
+                {dateError && (
+                  <p className="text-red-400 text-sm mt-1">⚠️ {dateError}</p>
+                )}
               </div>
 
               <div>

@@ -46,6 +46,11 @@ export class EventsController {
     return this.eventsService.findOne(id);
   }
 
+  @Get(':id/stats')
+  findOneWithStats(@Param('id') id: string) {
+    return this.eventsService.findOneWithReservationStats(id);
+  }
+
   @Get('admin/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.Admin)

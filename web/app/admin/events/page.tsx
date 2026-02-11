@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import AdminSidebar from "../../../components/AdminSidebar";
 import Link from "next/link";
@@ -16,6 +16,9 @@ interface Event {
   maxCapacity: number;
   status: string;
   createdAt: string;
+  confirmedReservations?: number;
+  totalReservations?: number;
+  fillRate?: number;
 }
 
 export default function AdminEventsPage() {
@@ -23,6 +26,8 @@ export default function AdminEventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [eventToDelete, setEventToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     // No need to check user role here - layout handles it
@@ -32,7 +37,18 @@ export default function AdminEventsPage() {
   const fetchEvents = async () => {
     try {
       const response = await api.get("/events/admin");
-      setEvents(response.data);
+      // Fetch stats for each event
+      const eventsWithStats = await Promise.all(
+        response.data.map(async (event: Event) => {
+          try {
+            const statsResponse = await api.get(`/events/${event._id}/stats`);
+            return { ...event, ...statsResponse.data };
+          } catch {
+            return event; // Fallback to basic event data
+          }
+        })
+      );
+      setEvents(eventsWithStats);
     } catch (err: any) {
       setError(err.response?.data?.message || "An error occurred");
     } finally {
@@ -59,15 +75,21 @@ export default function AdminEventsPage() {
   };
 
   const handleDelete = async (eventId: string) => {
-    if (!confirm("Are you sure you want to delete this event?")) {
-      return;
-    }
+    setConfirmMessage("Êtes-vous sûr de vouloir supprimer cet événement ?");
+    setEventToDelete(eventId);
+  };
 
+  const executeDelete = async () => {
+    if (!eventToDelete) return;
+    
     try {
-      await api.delete(`/events/${eventId}`);
+      await api.delete(`/events/${eventToDelete}`);
       fetchEvents();
     } catch (err: any) {
-      setError(err.response?.data?.message || "An error occurred");
+      setError(err.response?.data?.message || "Failed to delete event");
+    } finally {
+      setConfirmMessage("");
+      setEventToDelete(null);
     }
   };
 
@@ -97,6 +119,33 @@ export default function AdminEventsPage() {
     <div className="flex">
       <AdminSidebar />
       <div className="flex-1 p-8">
+        {/* Confirmation Modal */}
+        {confirmMessage && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-800 rounded-lg p-6 max-w-md mx-4">
+              <h3 className="text-lg font-bold text-white mb-4">Confirmation</h3>
+              <p className="text-gray-300 mb-6">{confirmMessage}</p>
+              <div className="flex gap-4">
+                <button
+                  onClick={executeDelete}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors"
+                >
+                  Oui
+                </button>
+                <button
+                  onClick={() => {
+                    setConfirmMessage("");
+                    setEventToDelete(null);
+                  }}
+                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-4">Events Management</h1>
           <Link
@@ -125,12 +174,46 @@ export default function AdminEventsPage() {
                   <div>
                     <h3 className="text-xl font-bold text-white mb-2">{event.title}</h3>
                     <p className="text-gray-400 mb-2">{event.description}</p>
-                    <div className="flex flex-wrap gap-4 text-sm text-gray-300">
+                    <div className="flex flex-wrap gap-4 text-sm text-gray-300 mb-3">
                       <span>📅 {new Date(event.date).toLocaleDateString()}</span>
                       <span>⏰ {event.time}</span>
                       <span>📍 {event.location}</span>
                       <span>👥 {event.maxCapacity} capacity</span>
                     </div>
+                    
+                    {/* Reservation Stats for Admin */}
+                    {event.confirmedReservations !== undefined && (
+                      <div className="bg-gray-700 rounded p-3 mb-3">
+                        <div className="grid grid-cols-3 gap-4 text-center">
+                          <div>
+                            <div className="text-2xl font-bold text-green-400">
+                              {event.confirmedReservations}
+                            </div>
+                            <div className="text-xs text-gray-400">Confirmés</div>
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold text-yellow-400">
+                              {event.fillRate}%
+                            </div>
+                            <div className="text-xs text-gray-400">Taux</div>
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold text-blue-400">
+                              {event.maxCapacity - event.confirmedReservations}
+                            </div>
+                            <div className="text-xs text-gray-400">Disponibles</div>
+                          </div>
+                        </div>
+                        <div className="mt-2">
+                          <div className="w-full bg-gray-600 rounded-full h-2">
+                            <div 
+                              className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${Math.min(event.fillRate || 0, 100)}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center space-x-2">
                     <span
