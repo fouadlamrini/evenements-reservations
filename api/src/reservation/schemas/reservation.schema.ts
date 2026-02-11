@@ -27,5 +27,4 @@ export class Reservation extends Document {
   canceledBy?: 'ADMIN' | 'PARTICIPANT';
 }
 
-export const ReservationSchema =
-  SchemaFactory.createForClass(Reservation);
+export const ReservationSchema = SchemaFactory.createForClass(Reservation);

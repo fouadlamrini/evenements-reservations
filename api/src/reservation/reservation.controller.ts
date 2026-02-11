@@ -26,6 +26,8 @@ export class ReservationController {
   constructor(private readonly reservationService: ReservationService) {}
 
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles(Role.Participant)
   create(@Body() createReservationDto: CreateReservationDto, @Request() req) {
     return this.reservationService.create(createReservationDto, req.user.userId);
   }
@@ -45,6 +47,13 @@ export class ReservationController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.reservationService.findOne(id);
+  }
+
+  @Patch(':id')
+  @UseGuards(RolesGuard)
+  @Roles(Role.Admin)
+  updateStatus(@Param('id') id: string, @Body() updateStatusDto: UpdateReservationStatusDto) {
+    return this.reservationService.updateStatus(id, updateStatusDto);
   }
 
   @Patch(':id/confirm')

@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "../context/AuthContext";
@@ -27,22 +28,10 @@ export default function Header() {
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-4">
               <Link
-                href="/"
-                className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Home
-              </Link>
-              <Link
                 href="/events"
                 className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 Events
-              </Link>
-              <Link
-                href="/about"
-                className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                About
               </Link>
               {user?.role === "Participant" && (
                 <Link
@@ -67,7 +56,7 @@ export default function Header() {
             {user ? (
               <>
                 <span className="text-gray-300 text-sm">
-                  Welcome, {user.email}
+                  Welcome, {user.name}
                 </span>
                 <button
                   onClick={logout}

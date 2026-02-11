@@ -14,6 +14,7 @@ import {
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { DashboardStatsDto } from './dto/dashboard-stats.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../roles/roles.decorator';
@@ -28,7 +29,6 @@ export class EventsController {
   create(@Body() createEventDto: CreateEventDto, @Request() req) {
     return this.eventsService.create(createEventDto, req.user.userId);
   }
-
   @Get()
   findAll() {
     return this.eventsService.findAll();
@@ -44,6 +44,11 @@ export class EventsController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.eventsService.findOne(id);
+  }
+
+  @Get(':id/stats')
+  findOneWithStats(@Param('id') id: string) {
+    return this.eventsService.findOneWithReservationStats(id);
   }
 
   @Get('admin/:id')
@@ -85,5 +90,12 @@ export class EventsController {
   @Roles(Role.Admin)
   remove(@Param('id') id: string, @Request() req) {
     return this.eventsService.remove(id, req.user.userId);
+  }
+
+  @Get('dashboard/stats')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  getDashboardStats(): Promise<DashboardStatsDto> {
+    return this.eventsService.getDashboardStats();
   }
 }

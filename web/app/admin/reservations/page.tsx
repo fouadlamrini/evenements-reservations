@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import AdminSidebar from "../../../components/AdminSidebar";
 import Link from "next/link";
@@ -30,6 +30,8 @@ export default function AdminReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [actionToConfirm, setActionToConfirm] = useState<{type: string, id: string} | null>(null);
   const [filter, setFilter] = useState<string>("all");
 
   useEffect(() => {
@@ -49,37 +51,41 @@ export default function AdminReservationsPage() {
   };
 
   const handleConfirm = async (reservationId: string) => {
-    try {
-      await api.patch(`/reservations/${reservationId}/confirm`);
-      fetchReservations();
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to confirm reservation");
-    }
+    setConfirmMessage("Êtes-vous sûr de vouloir confirmer cette réservation ?");
+    setActionToConfirm({ type: 'confirm', id: reservationId });
   };
 
   const handleRefuse = async (reservationId: string) => {
-    if (!confirm("Are you sure you want to refuse this reservation?")) {
-      return;
-    }
-
-    try {
-      await api.patch(`/reservations/${reservationId}/refuse`);
-      fetchReservations();
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to refuse reservation");
-    }
+    setConfirmMessage("Êtes-vous sûr de vouloir refuser cette réservation ?");
+    setActionToConfirm({ type: 'refuse', id: reservationId });
   };
 
   const handleCancel = async (reservationId: string) => {
-    if (!confirm("Are you sure you want to cancel this reservation?")) {
-      return;
-    }
+    setConfirmMessage("Êtes-vous sûr de vouloir annuler cette réservation ?");
+    setActionToConfirm({ type: 'cancel', id: reservationId });
+  };
 
+  const executeAction = async () => {
+    if (!actionToConfirm) return;
+    
     try {
-      await api.patch(`/reservations/${reservationId}/cancel-admin`);
+      switch (actionToConfirm.type) {
+        case 'confirm':
+          await api.patch(`/reservations/${actionToConfirm.id}`, { status: "CONFIRMED" });
+          break;
+        case 'refuse':
+          await api.patch(`/reservations/${actionToConfirm.id}`, { status: "REFUSED" });
+          break;
+        case 'cancel':
+          await api.patch(`/reservations/${actionToConfirm.id}/cancel-admin`);
+          break;
+      }
       fetchReservations();
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to cancel reservation");
+      setError(err.response?.data?.message || "Failed to perform action");
+    } finally {
+      setConfirmMessage("");
+      setActionToConfirm(null);
     }
   };
 
@@ -142,6 +148,32 @@ export default function AdminReservationsPage() {
     <div className="flex">
       <AdminSidebar />
       <div className="flex-1 p-8">
+        {/* Confirmation Modal */}
+        {confirmMessage && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-800 rounded-lg p-6 max-w-md mx-4">
+              <h3 className="text-lg font-bold text-white mb-4">Confirmation</h3>
+              <p className="text-gray-300 mb-6">{confirmMessage}</p>
+              <div className="flex gap-4">
+                <button
+                  onClick={executeAction}
+                  className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition-colors"
+                >
+                  Oui
+                </button>
+                <button
+                  onClick={() => {
+                    setConfirmMessage("");
+                    setActionToConfirm(null);
+                  }}
+                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-4">Reservations Management</h1>
           <div className="flex gap-4 items-center">
@@ -174,26 +206,26 @@ export default function AdminReservationsPage() {
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
                     <h3 className="text-xl font-bold text-white mb-2">
-                      {reservation.eventId.title}
+                      {reservation.eventId?.title || 'Event not found'}
                     </h3>
                     <div className="grid md:grid-cols-2 gap-4 mb-3">
                       <div className="space-y-1 text-sm">
                         <p className="text-gray-400">
-                          <span className="font-medium">Participant:</span> {reservation.participantId.name}
+                          <span className="font-medium">Participant:</span> {reservation.participantId?.name || 'Unknown'}
                         </p>
                         <p className="text-gray-400">
-                          <span className="font-medium">Email:</span> {reservation.participantId.email}
+                          <span className="font-medium">Email:</span> {reservation.participantId?.email || 'Unknown'}
                         </p>
                       </div>
                       <div className="space-y-1 text-sm">
                         <p className="text-gray-400">
-                          <span className="font-medium">Date:</span> {new Date(reservation.eventId.date).toLocaleDateString()}
+                          <span className="font-medium">Date:</span> {reservation.eventId?.date ? new Date(reservation.eventId.date).toLocaleDateString() : 'Unknown'}
                         </p>
                         <p className="text-gray-400">
-                          <span className="font-medium">Time:</span> {reservation.eventId.time}
+                          <span className="font-medium">Time:</span> {reservation.eventId?.time || 'Unknown'}
                         </p>
                         <p className="text-gray-400">
-                          <span className="font-medium">Location:</span> {reservation.eventId.location}
+                          <span className="font-medium">Location:</span> {reservation.eventId?.location || 'Unknown'}
                         </p>
                       </div>
                     </div>
@@ -209,12 +241,18 @@ export default function AdminReservationsPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <Link
-                    href={`/events/${reservation.eventId._id}`}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
-                  >
-                    View Event
-                  </Link>
+                  {reservation.eventId?._id ? (
+                    <Link
+                      href={`/events/${reservation.eventId._id}`}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+                    >
+                      View Event
+                    </Link>
+                  ) : (
+                    <span className="bg-gray-600 text-gray-400 px-4 py-2 rounded text-sm font-medium">
+                      Event Unavailable
+                    </span>
+                  )}
                   
                   {canConfirm(reservation.status) && (
                     <button
